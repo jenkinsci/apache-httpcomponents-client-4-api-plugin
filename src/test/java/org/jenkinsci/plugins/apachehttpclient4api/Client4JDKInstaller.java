@@ -231,6 +231,8 @@ public class Client4JDKInstaller extends ToolInstaller {
         log.getLogger().println("Downloading JDK from "+primary.filepath);
 
         HttpClientBuilder hcb = HttpClientBuilder.create();
+        
+        //TODO: Offer public utility method for that?
         ProxyConfiguration jpc = Jenkins.getActiveInstance().proxy;
         if(jpc != null) {
             HttpHost proxyHost = new HttpHost(jpc.name, jpc.port);
