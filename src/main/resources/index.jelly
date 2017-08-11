@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+  Bundles Apache HttpClient 4.x and allows it to be used by Jenkins plugins.
+</div>
