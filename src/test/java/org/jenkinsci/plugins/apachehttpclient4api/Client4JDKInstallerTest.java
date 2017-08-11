@@ -85,7 +85,7 @@ public class Client4JDKInstallerTest {
                 u = prop.getProperty("oracle.userName");
                 p = prop.getProperty("oracle.password");
                 if (u==null || p==null) {
-                    LOGGER.log(Level.WARNING, "{0} doesn''t contain oracle.userName and oracle.password. Falling back to mmock credentials", f);
+                    LOGGER.log(Level.WARNING, "{0} doesn''t contain oracle.userName and oracle.password. Falling back to mock credentials", f);
                 }
             }
         }

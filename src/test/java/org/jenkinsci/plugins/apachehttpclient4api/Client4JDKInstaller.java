@@ -65,18 +65,33 @@ import hudson.tools.ToolInstallerDescriptor;
 import hudson.util.FormValidation;
 import hudson.util.HttpResponses;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import javax.annotation.CheckForNull;
 import javax.servlet.ServletException;
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.StatusLine;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.ProxyAuthenticationStrategy;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.message.BasicHttpRequest;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.Stapler;
@@ -215,21 +230,54 @@ public class Client4JDKInstaller extends ToolInstaller {
 
         log.getLogger().println("Downloading JDK from "+primary.filepath);
 
-        HttpClient hc = new HttpClient();
-        hc.getParams().setParameter("http.useragent","Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)");
-        ProxyConfiguration jpc = Jenkins.getInstance().proxy;
+        HttpClientBuilder hcb = HttpClientBuilder.create();
+        ProxyConfiguration jpc = Jenkins.getActiveInstance().proxy;
         if(jpc != null) {
-            hc.getHostConfiguration().setProxy(jpc.name, jpc.port);
-            if(jpc.getUserName() != null)
-                hc.getState().setProxyCredentials(AuthScope.ANY,new UsernamePasswordCredentials(jpc.getUserName(),jpc.getPassword()));
+            HttpHost proxyHost = new HttpHost(jpc.name, jpc.port);
+            hcb.setProxy(proxyHost);
+            
+            if(jpc.getUserName() != null) {
+                BasicCredentialsProvider credsProvider = new BasicCredentialsProvider();
+            
+                UsernamePasswordCredentials creds = new UsernamePasswordCredentials(jpc.getUserName(), jpc.getPassword());
+                credsProvider.setCredentials(new AuthScope(proxyHost), creds);      
+                hcb.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
+
+            }
         }
-
-        int authCount=0, totalPageCount=0;  // counters for avoiding infinite loop
-
-        HttpMethodBase m = new GetMethod(primary.filepath);
-        hc.getState().addCookie(new Cookie(".oracle.com","gpw_e24",".", "/", -1, false));
-        hc.getState().addCookie(new Cookie(".oracle.com","oraclelicense","accept-securebackup-cookie", "/", -1, false));
+        
+        { // Cookies
+            CookieStore cookies = new BasicCookieStore();
+        
+            BasicClientCookie gpw_e24 = new BasicClientCookie("gpw_e24", ".");
+            gpw_e24.setSecure(false);
+            gpw_e24.setDomain(".oracle.com");
+            gpw_e24.setPath("/");
+            cookies.addCookie(gpw_e24);
+        
+            BasicClientCookie oraclelicense = new BasicClientCookie("oraclelicense", "accept-securebackup-cookie");
+            oraclelicense.setSecure(false);
+            oraclelicense.setDomain("oraclelicense");
+            oraclelicense.setPath("/");
+            cookies.addCookie(oraclelicense);
+        
+            hcb.setDefaultCookieStore(cookies);
+        }
+        
+        { // User Agent
+            hcb.setUserAgent("Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US");
+        }
+        
+        int totalPageCount=0;  // counters for avoiding infinite loop
+        final HttpHost target;
         try {
+            URI targetUri = new URI(primary.filepath);
+            target = new HttpHost(targetUri.getHost());
+        } catch(URISyntaxException ex) {
+            throw new IOException(ex);
+        }
+        HttpRequest m = new HttpGet(primary.filepath);
+        try(CloseableHttpClient hc = hcb.build()) {
             while (true) {
                 if (totalPageCount++>16) {
                     if (downloadMustHappen) {
@@ -240,78 +288,98 @@ public class Client4JDKInstaller extends ToolInstaller {
                     }
                 }
 
-                LOGGER.log(Level.FINE, "Requesting {0}", m.getURI());
-                int r = hc.executeMethod(m);
-                if (r/100==3) {
-                    // redirect?
-                    String loc = m.getResponseHeader("Location").getValue();
-                    m.releaseConnection();
-                    m = new GetMethod(loc);
-                    continue;
-                }
-                if (r!=200)
-                    throw new IOException("Failed to request " + m.getURI() +" exit code="+r);
-
-                if (m.getURI().getHost().equals("login.oracle.com")) {
-                    LOGGER.fine("Appears to be a login page");
-                    String resp = IOUtils.toString(m.getResponseBodyAsStream(), m.getResponseCharSet());
-                    m.releaseConnection();
-                    Matcher pm = Pattern.compile("<form .*?action=\"([^\"]*)\" .*?</form>", Pattern.DOTALL).matcher(resp);
-                    if (!pm.find())
-                        throw new IllegalStateException("Unable to find a form in the response:\n"+resp);
-
-                    String form = pm.group();
-                    PostMethod post = new PostMethod(
-                            new URL(new URL(m.getURI().getURI()),pm.group(1)).toExternalForm());
-
-                    String u = getDescriptor().getUsername();
-                    Secret p = getDescriptor().getPassword();
-                    if (u==null || p==null) {
-                        log.hyperlink(getCredentialPageUrl(),"Oracle now requires Oracle account to download previous versions of JDK. Please specify your Oracle account username/password.\n");
-                        throw new AbortException("Unable to install JDK unless a valid Oracle account username/password is provided in the system configuration.");
+                LOGGER.log(Level.FINE, "Requesting {0}", m);
+                    try (CloseableHttpResponse response = hc.execute(target, m)) {
+                    StatusLine statusLine = response.getStatusLine();
+                    if (statusLine.getStatusCode()/100==3) {
+                        // redirect?
+                        String loc = response.getFirstHeader("Location").getValue();
+                        m = new BasicHttpRequest("GET", loc);
+                        continue;
                     }
-
-                    for (String fragment : form.split("<input")) {
-                        String n = extractAttribute(fragment,"name");
-                        String v = extractAttribute(fragment,"value");
-                        if (n==null || v==null)     continue;
-                        if (n.equals("ssousername"))
-                            v = u;
-                        if (n.equals("password")) {
-                            v = p.getPlainText();
-                            // Do not try to login with mock credentials
-                            /*if (authCount++ > 3) {
-                                log.hyperlink(getCredentialPageUrl(),"Your Oracle account doesn't appear valid. Please specify a valid username/password\n");
-                                throw new AbortException("Unable to install JDK unless a valid username/password is provided.");
-                            }*/
-                        }
-                        post.addParameter(n, v);
+                    if (statusLine.getStatusCode()!=200) {
+                        throw new IOException("Failed to request " + m.getRequestLine().getUri() +" status=" + statusLine);
                     }
-
-                    m = post;
-                } else {
-                    log.getLogger().println("Downloading " + m.getResponseContentLength() + " bytes");
-
-                    // download to a temporary file and rename it in to handle concurrency and failure correctly,
-                    File tmp = new File(cache.getPath()+".tmp");
+                
+                
+                    final URI mURI; 
                     try {
-                        tmp.getParentFile().mkdirs();
-                        try (OutputStream out = Files.newOutputStream(tmp.toPath())) {
-                            IOUtils.copy(m.getResponseBodyAsStream(), out);
-                        } catch (InvalidPathException e) {
-                            throw new IOException(e);
-                        }
+                        mURI = new URI(m.getRequestLine().getUri());
+                    } catch(URISyntaxException ex) {
+                        throw new IOException("Request line URI is ciorrupted", ex);
+                    }
 
-                        tmp.renameTo(cache);
-                        return cache.toURL();
-                    } finally {
-                        tmp.delete();
+                    if (mURI.getHost().equals("login.oracle.com")) {
+                        LOGGER.fine("Appears to be a login page");
+
+                        BasicResponseHandler loginPageHandler= new BasicResponseHandler() {
+                            @Override
+                            public String handleResponse(org.apache.http.HttpResponse response) throws HttpResponseException, IOException {
+                                return IOUtils.toString(
+                                        response.getEntity().getContent(), 
+                                        response.getEntity().getContentEncoding().getValue()); 
+                            }  
+                        };
+                        String resp = loginPageHandler.handleResponse(response);
+                        
+                        Matcher pm = Pattern.compile("<form .*?action=\"([^\"]*)\" .*?</form>", Pattern.DOTALL).matcher(resp);
+                        if (!pm.find())
+                            throw new IllegalStateException("Unable to find a form in the response:\n"+resp);
+
+                        String form = pm.group();
+                        
+                        String u = getDescriptor().getUsername();
+                        Secret p = getDescriptor().getPassword();
+                        if (u==null || p==null) {
+                            log.hyperlink(getCredentialPageUrl(),"Oracle now requires Oracle account to download previous versions of JDK. Please specify your Oracle account username/password.\n");
+                            throw new AbortException("Unable to install JDK unless a valid Oracle account username/password is provided in the system configuration.");
+                        }
+                        
+                        
+                        URIBuilder bldr = new URIBuilder(new URL(mURI.toURL(), pm.group(1)).toURI());
+                        for (String fragment : form.split("<input")) {
+                            String n = extractAttribute(fragment,"name");
+                            String v = extractAttribute(fragment,"value");
+                            if (n==null || v==null)     continue;
+                            if (n.equals("ssousername"))
+                                v = u;
+                            if (n.equals("password")) {
+                                v = p.getPlainText();
+                                // Do not try to login with mock credentials
+                                /*if (authCount++ > 3) {
+                                    log.hyperlink(getCredentialPageUrl(),"Your Oracle account doesn't appear valid. Please specify a valid username/password\n");
+                                    throw new AbortException("Unable to install JDK unless a valid username/password is provided.");
+                                }*/
+                            }
+                            bldr.addParameter(n, v);
+                        }
+                        HttpPost post = new HttpPost(bldr.build());
+
+                        m = post;
+                    } else {
+                        log.getLogger().println("Downloading " + response.getEntity().getContentLength() + " bytes");
+
+                        // download to a temporary file and rename it in to handle concurrency and failure correctly,
+                        File tmp = new File(cache.getPath()+".tmp");
+                        try {
+                            tmp.getParentFile().mkdirs();
+                            try (OutputStream out = Files.newOutputStream(tmp.toPath())) {
+                                IOUtils.copy(response.getEntity().getContent(), out);
+                            } catch (InvalidPathException e) {
+                                throw new IOException(e);
+                            }
+
+                            tmp.renameTo(cache);
+                            return cache.toURL();
+                        } finally {
+                            tmp.delete();
+                        }
                     }
                 }
             }
-        } finally {
-            m.releaseConnection();
-        }
+        } catch(URISyntaxException ex) {
+            throw new IOException(ex);
+        } 
     }
 
     private static String extractAttribute(String s, String name) {
