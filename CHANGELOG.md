@@ -5,5 +5,5 @@ Release Notes
 
 Release date: Coming Soon
 
-* Initial release with Apache HttpClient 4.5.3
+* Initial release with Apache HttpComponents Client 4.5.3
 
