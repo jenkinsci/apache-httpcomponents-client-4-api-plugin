@@ -1,7 +1,7 @@
-Apache HttpClient 4.x API Plugin for Jenkins
+Apache HttpComponents Client 4.x API Plugin for Jenkins
 ===
 
-This plugin bundles the [HttpClient 4.5.x](https://hc.apache.org/httpcomponents-client-4.5.x/index.html) library,
+This plugin bundles the [Apache HttpComponents Client 4.5.x](https://hc.apache.org/httpcomponents-client-4.5.x/index.html) library,
 which can be used by other plugins as a dependency.
 It allows managing library updates independently from plugins.
 

@@ -10,7 +10,7 @@
     <relativePath/>
   </parent>
   
-  <artifactId>apache-httpclient-4-api</artifactId>
+  <artifactId>apache-httpcomponents-client-4-api</artifactId>
   <version>4.5.3-1-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
@@ -19,8 +19,8 @@
     <java.level>7</java.level>
   </properties>
 
-  <name>Jenkins Apache HttpClient 4.x API Plugin</name>
-  <description>Bundles Apache HttpClient 4.x and allows it to be used by Jenkins plugins</description>
+  <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
+  <description>Bundles Apache HttpComponents Client 4.x and allows it to be used by Jenkins plugins</description>
   <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
 
   <licenses>
