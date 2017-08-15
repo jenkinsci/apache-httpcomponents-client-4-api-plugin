@@ -165,7 +165,6 @@ public class Client4JDKInstaller extends ToolInstaller {
             JDKInstaller.Platform p = JDKInstaller.Platform.of(node);
             URL url = locate(log, p, JDKInstaller.CPU.of(node), true);
 
-//            out.println("Downloading "+url);
             FilePath file = expectedLocation.child(p.bundleFileName);
             file.copyFrom(url);
 
@@ -308,7 +307,7 @@ public class Client4JDKInstaller extends ToolInstaller {
                     try {
                         mURI = new URI(m.getRequestLine().getUri());
                     } catch(URISyntaxException ex) {
-                        throw new IOException("Request line URI is ciorrupted", ex);
+                        throw new IOException("Request line URI is corrupted", ex);
                     }
 
                     if (mURI.getHost().equals("login.oracle.com")) {
