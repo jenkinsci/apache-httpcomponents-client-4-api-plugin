@@ -11,7 +11,7 @@
   </parent>
   
   <artifactId>apache-httpcomponents-client-4-api</artifactId>
-  <version>4.5.3-1-SNAPSHOT</version>
+  <version>4.5.3-1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <properties>
@@ -21,7 +21,7 @@
 
   <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
   <description>Bundles Apache HttpComponents Client 4.x and allows it to be used by Jenkins plugins</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/TODO+Plugin</url>
+  <url>https://wiki.jenkins.io/display/JENKINS/Apache+HttpComponents+Client+4.x+API+Plugin</url>
 
   <licenses>
     <license>
