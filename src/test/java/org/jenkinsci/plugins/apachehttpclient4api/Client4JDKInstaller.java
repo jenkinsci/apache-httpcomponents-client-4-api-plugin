@@ -243,7 +243,7 @@ public class Client4JDKInstaller extends ToolInstaller {
                 UsernamePasswordCredentials creds = new UsernamePasswordCredentials(jpc.getUserName(), jpc.getPassword());
                 credsProvider.setCredentials(new AuthScope(proxyHost), creds);      
                 hcb.setProxyAuthenticationStrategy(new ProxyAuthenticationStrategy());
-
+                hcb.setDefaultCredentialsProvider(credsProvider);
             }
         }
         
