@@ -1,6 +1,13 @@
 Release Notes
 ===
 
+# 4.5.5-1.0
+
+Release date: Apr 26, 2018
+
+* [PR #5](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/pull/5) -
+Update to Apache HttpComponents Client 4.5.5. ([full changelog](https://github.com/apache/httpcomponents-client/blob/4.5.5/RELEASE_NOTES.txt))
+
 # 4.5.3-2.1
 
 Release date: Jan 23, 2018
