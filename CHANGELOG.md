@@ -1,6 +1,12 @@
 Release Notes
 ===
 
+# 4.5.5-2.0
+
+Release date: May 1, 2018
+
+* [JENKINS-48357](https://issues.jenkins-ci.org/browse/JENKINS-48357)/[PR #6](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/pull/6) - Also bundle Apache HttpComponents HttpAsyncClient 4.1.3 to prevent class loading issues if `httpasyncclient` or `httpasyncclient-cache` are used with this API plugin.
+
 # 4.5.5-1.0
 
 Release date: Apr 26, 2018
