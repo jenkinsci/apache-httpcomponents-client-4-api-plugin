@@ -1,6 +1,12 @@
 Release Notes
 ===
 
+# 4.5.5-2.1
+
+Release date: May 22, 2018
+
+* Developer: Remove unhelpful tests as a workaround for [JENKINS-51483](https://issues.jenkins-ci.org/browse/JENKINS-51483) to fix the [PCT](https://github.com/jenkinsci/plugin-compat-tester) when this plugin is tested against Jenkins core 2.112 and newer.
+
 # 4.5.5-2.0
 
 Release date: May 1, 2018
