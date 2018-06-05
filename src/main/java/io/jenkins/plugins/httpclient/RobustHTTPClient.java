@@ -25,8 +25,10 @@
 package io.jenkins.plugins.httpclient;
 
 import hudson.AbortException;
+import hudson.FilePath;
 import hudson.model.Computer;
 import hudson.model.TaskListener;
+import hudson.remoting.VirtualChannel;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,13 +40,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import jenkins.MasterToSlaveFileCallable;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.util.JenkinsJVM;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -195,14 +200,59 @@ public final class RobustHTTPClient implements Serializable {
     }
 
     /**
+     * Mask out query string details in a URL.
+     * Useful in conjunction with {@code VirtualFile#toExternalURL}.
+     * @param url any URL
+     * @return the same, but with any query string concealed
+     */
+    public static String sanitize(URL url) {
+        return url.toString().replaceFirst("[?].+$", "?…");
+    }
+
+    /**
      * Upload a file to a URL.
      */
     public void uploadFile(File f, URL url, TaskListener listener) throws IOException, InterruptedException {
-        connect("upload", "upload " + f + " to " + url.toString().replaceFirst("[?].+$", "?…"), client -> {
+        connect("upload", "upload " + f + " to " + sanitize(url), client -> {
             HttpPut put = new HttpPut(url.toString());
             put.setEntity(new FileEntity(f));
             return client.execute(put);
         }, response -> {}, listener);
+    }
+
+    /**
+     * Download a file from a URL.
+     */
+    public void downloadFile(File f, URL url, TaskListener listener) throws IOException, InterruptedException {
+        connect("download", "download " + sanitize(url) + " to " + f, client -> client.execute(new HttpGet(url.toString())), response -> {
+            try (InputStream is = response.getEntity().getContent()) {
+                FileUtils.copyInputStreamToFile(is, f);
+            }
+        }, listener);
+    }
+
+    /**
+     * Like {@link FilePath#copyFrom(URL)} but using {@link #downloadFile} and running remotely on the agent.
+     */
+    public void copyFromRemotely(FilePath f, URL url, TaskListener listener) throws IOException, InterruptedException {
+        f.act(new CopyFromRemotely(this, url, listener));
+    }
+
+    private static final class CopyFromRemotely extends MasterToSlaveFileCallable<Void> {
+        private static final long serialVersionUID = 1;
+        private final RobustHTTPClient client;
+        private final URL u;
+        private final TaskListener listener;
+        CopyFromRemotely(RobustHTTPClient client, URL u, TaskListener listener) {
+            this.client = client;
+            this.u = u;
+            this.listener = listener;
+        }
+        @Override
+        public Void invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+            client.downloadFile(f, u, listener);
+            return null;
+        }
     }
 
 }
