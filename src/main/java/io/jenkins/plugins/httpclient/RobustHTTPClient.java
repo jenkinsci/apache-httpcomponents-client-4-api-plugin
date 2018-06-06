@@ -33,6 +33,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -200,13 +202,19 @@ public final class RobustHTTPClient implements Serializable {
     }
 
     /**
-     * Mask out query string details in a URL.
+     * Mask out query string or user info details in a URL.
      * Useful in conjunction with {@code VirtualFile#toExternalURL}.
      * @param url any URL
-     * @return the same, but with any query string concealed
+     * @return the same, but with any {@link URL#getQuery} and/or {@link URL#getUserInfo} concealed
      */
     public static String sanitize(URL url) {
-        return url.toString().replaceFirst("[?].+$", "?…");
+        try {
+            URI orig = url.toURI();
+            return new URI(orig.getScheme(), orig.getUserInfo() != null ? "…" : null, orig.getHost(), orig.getPort(), orig.getPath(), orig.getQuery() != null ? "…" : null, orig.getFragment()).toString();
+        } catch (URISyntaxException x) {
+            assert false : x;
+            return url.toString();
+        }
     }
 
     /**
