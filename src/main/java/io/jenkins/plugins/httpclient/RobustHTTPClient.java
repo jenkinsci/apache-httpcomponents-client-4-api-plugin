@@ -53,6 +53,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -120,11 +121,21 @@ public final class RobustHTTPClient implements Serializable {
         this.timeout = timeout;
     }
 
+    /**
+     * How to initiate a connection.
+     * For example, call {@link CloseableHttpClient#execute(HttpUriRequest)} on {@link HttpGet#HttpGet(String)}.
+     * @see #connect
+     */
     @FunctionalInterface
     public interface ConnectionCreator {
         CloseableHttpResponse connect(CloseableHttpClient client) throws IOException, InterruptedException;
     }
 
+    /**
+     * What to do with a successful (2xx) connection.
+     * For example, call {@link CloseableHttpResponse#getEntity} and {@link HttpEntity#getContent}.
+     * @see #connect
+     */
     @FunctionalInterface
     public interface ConnectionUser {
         void use(CloseableHttpResponse response) throws IOException, InterruptedException;
@@ -132,13 +143,17 @@ public final class RobustHTTPClient implements Serializable {
 
     /**
      * Perform an HTTP network operation with appropriate timeouts and retries.
-     * @param whatConcise a short description of the operation, like {@code upload}
-     * @param whatVerbose a longer description of the operation, like {@code uploading … to …}
+     * 2xx status codes are considered successful.
+     * Low-level network errors (for example, DNS failures) and 5xx server responses are considered retryable,
+     * as are timeouts on individual attempts;
+     * other response codes (normally 3xx or 4xx) are treated as immediate failures.
+     * @param whatConcise a short description of the operation, like {@code upload}, used when retrying
+     * @param whatVerbose a longer description of the operation, like {@code uploading … to …}, used when retrying (see {@link #sanitize})
      * @param connectionCreator how to establish a connection prior to getting the server’s response
      * @param connectionUser what to do, if anything, after a successful (2xx) server response
      * @param listener a place to print messages
      * @throws IOException if there is an unrecoverable error; {@link AbortException} will be used where appropriate
-     * @throws InterruptedException if the transfer is interrupted
+     * @throws InterruptedException if an operation, or a sleep between retries, is interrupted
      */
     public void connect(String whatConcise, String whatVerbose, ConnectionCreator connectionCreator, ConnectionUser connectionUser, TaskListener listener) throws IOException, InterruptedException {
         AtomicInteger responseCode = new AtomicInteger();
