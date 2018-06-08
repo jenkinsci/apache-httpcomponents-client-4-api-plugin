@@ -71,6 +71,7 @@ public final class RobustHTTPClient implements Serializable {
     private static final ExecutorService executors = JenkinsJVM.isJenkinsJVM() ? Computer.threadPoolForRemoting : Executors.newCachedThreadPool();
 
     private int stopAfterAttemptNumber;
+    // all times are measured in milliseconds
     private long waitMultiplier;
     private long waitMaximum;
     private long timeout;
@@ -86,8 +87,8 @@ public final class RobustHTTPClient implements Serializable {
         JenkinsJVM.checkJenkinsJVM();
         this.stopAfterAttemptNumber = Integer.getInteger(RobustHTTPClient.class.getName() + ".STOP_AFTER_ATTEMPT_NUMBER", 10);
         this.waitMultiplier = Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MULTIPLIER", 100);
-        this.waitMaximum = Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MAXIMUM", 300);
-        this.timeout = Long.getLong(RobustHTTPClient.class.getName() + ".TIMEOUT", /* 15m */15 * 60);
+        this.waitMaximum = Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MAXIMUM", TimeUnit.MINUTES.toMillis(5));
+        this.timeout = Long.getLong(RobustHTTPClient.class.getName() + ".TIMEOUT", TimeUnit.MINUTES.toMillis(15));
     }
 
     /**
@@ -98,27 +99,27 @@ public final class RobustHTTPClient implements Serializable {
     }
 
     /**
-     * Initial number of milliseconds between first and second upload/download attempts.
+     * Initial time between first and second upload/download attempts.
      * Subsequent ones increase exponentially.
      * Note that this is not a <em>randomized</em> exponential backoff;
      * and the base of the exponent is currently hard-coded to 2.
      */
-    public void setWaitMultiplier(long waitMultiplier) {
-        this.waitMultiplier = waitMultiplier;
+    public void setWaitMultiplier(long waitMultiplier, TimeUnit unit) {
+        this.waitMultiplier = unit.toMillis(waitMultiplier);
     }
 
     /**
-     * Maximum number of seconds between upload/download attempts.
+     * Maximum time between upload/download attempts.
      */
-    public void setWaitMaximum(long waitMaximum) {
-        this.waitMaximum = waitMaximum;
+    public void setWaitMaximum(long waitMaximum, TimeUnit unit) {
+        this.waitMaximum = unit.toMillis(waitMaximum);
     }
 
     /**
-     * Number of seconds to permit a single upload/download attempt to take.
+     * Time to permit a single upload/download attempt to take.
      */
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
+    public void setTimeout(long timeout, TimeUnit unit) {
+        this.timeout = unit.toMillis(timeout);
     }
 
     /**
@@ -184,7 +185,7 @@ public final class RobustHTTPClient implements Serializable {
                             }
                         }
                         return null; // success
-                    }).get(timeout, TimeUnit.SECONDS);
+                    }).get(timeout, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException x) {
                     throw new ExecutionException(new IOException(x)); // ExecutionException unwrapped & treated as retryable below
                 }
@@ -200,7 +201,7 @@ public final class RobustHTTPClient implements Serializable {
                         throw (IOException) x; // 4xx errors should not be retried
                     }
                     // TODO exponent base could be made into a configurable parameter
-                    Thread.sleep(Math.min(((long) Math.pow(2d, attempt)) * waitMultiplier, waitMaximum * 1000));
+                    Thread.sleep(Math.min(((long) Math.pow(2d, attempt)) * waitMultiplier, waitMaximum));
                     listener.getLogger().printf("Retrying %s after: %s%n", whatConcise, x instanceof AbortException ? x.getMessage() : x.toString());
                     attempt++; // and continue
                 } else if (x instanceof InterruptedException) { // all other exceptions considered fatal
