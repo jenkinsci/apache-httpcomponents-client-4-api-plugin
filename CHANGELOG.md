@@ -1,6 +1,13 @@
 Release Notes
 ===
 
+# 4.5.5-3.0
+
+Release date: June 12, 2018
+
+* Developer: Add `RobustHTTPClient` utility API for making HTTP connections with protection against transient failures. API is marked as beta and may change at any time.
+* Developer: Add support for incremental Maven releases. ([JEP-305](https://github.com/jenkinsci/jep/tree/master/jep/305))
+
 # 4.5.5-2.1
 
 Release date: May 22, 2018
