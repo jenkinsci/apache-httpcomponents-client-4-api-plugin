@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jenkins.MasterToSlaveFileCallable;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.util.JenkinsJVM;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -156,7 +157,8 @@ public final class RobustHTTPClient implements Serializable {
      * @throws IOException if there is an unrecoverable error; {@link AbortException} will be used where appropriate
      * @throws InterruptedException if an operation, or a sleep between retries, is interrupted
      */
-    public void connect(String whatConcise, String whatVerbose, ConnectionCreator connectionCreator, ConnectionUser connectionUser, TaskListener listener) throws IOException, InterruptedException {
+    public void connect(String whatConcise, String whatVerbose, @NonNull ConnectionCreator connectionCreator, @NonNull
+            ConnectionUser connectionUser, @NonNull TaskListener listener) throws IOException, InterruptedException {
         AtomicInteger responseCode = new AtomicInteger();
         int attempt = 1;
         while (true) {
