@@ -274,7 +274,11 @@ public final class RobustHTTPClient implements Serializable {
         }
         @Override
         public Void invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-            client.downloadFile(f, u, listener);
+            try {
+                client.downloadFile(f, u, listener);
+            } finally {
+                listener.getLogger().flush();
+            }
             return null;
         }
     }
