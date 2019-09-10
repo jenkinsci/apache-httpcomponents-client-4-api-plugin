@@ -24,7 +24,7 @@
 
   <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
   <description>Bundles Apache HttpComponents Client 4.x and allows it to be used by Jenkins plugins</description>
-  <url>https://wiki.jenkins.io/display/JENKINS/Apache+HttpComponents+Client+4.x+API+Plugin</url>
+  <url>https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin</url>
 
   <licenses>
     <license>
