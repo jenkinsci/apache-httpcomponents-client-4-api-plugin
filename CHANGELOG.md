@@ -1,6 +1,13 @@
 Release Notes
 ===
 
+| WARNING: Release notes have been moved to [GitHub Releases](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases) |
+| --- |
+
+# New releases
+
+See [GitHub Releases](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases).
+
 # 4.5.5-3.0
 
 Release date: June 12, 2018
