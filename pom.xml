@@ -10,11 +10,11 @@
   </parent>
   
   <artifactId>apache-httpcomponents-client-4-api</artifactId>
-  <version>4.5.10-1.0</version>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
   <properties>
-    <revision>4.5.5-4.0</revision>
+    <revision>4.5.10-2.0</revision>
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.60.3</jenkins.version>
     <java.level>8</java.level>
@@ -44,7 +44,7 @@
     <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
-    <tag>apache-httpcomponents-client-4-api-4.5.10-1.0</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <dependencies>
