@@ -58,13 +58,10 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
 
 /**
  * Utility to make HTTP connections with protection against transient failures.
  */
-@Restricted(Beta.class)
 public final class RobustHTTPClient implements Serializable {
 
     private static final long serialVersionUID = 1;
