@@ -18,7 +18,7 @@
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.60.3</jenkins.version>
     <java.level>8</java.level>
-    <httpclient.version>4.5.12</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
     <httpasyncclient.version>4.1.4</httpasyncclient.version>
   </properties>
 
