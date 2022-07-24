@@ -76,9 +76,9 @@ public final class RobustHTTPClient implements Serializable {
 
     /**
      * Creates a client configured with reasonable defaults from system properties.
-     * <p>This constructor should be run in the Jenkins master.
+     * <p>This constructor should be run in the Jenkins controller.
      * To make requests from an agent JVM, create a {@code final} field of this type in your {@link MasterToSlaveCallable} or similar;
-     * set it with a field initializer (run in the callable’s constructor on the master),
+     * set it with a field initializer (run in the callable’s constructor on the controller),
      * letting the agent deserialize the configuration.
      */
     public RobustHTTPClient() {
@@ -188,7 +188,7 @@ public final class RobustHTTPClient implements Serializable {
                 } catch (TimeoutException x) {
                     throw new ExecutionException(new IOException(x)); // ExecutionException unwrapped & treated as retryable below
                 }
-                listener.getLogger().flush(); // seems we can get interleaved output with master otherwise
+                listener.getLogger().flush(); // seems we can get interleaved output with controller otherwise
                 return; // success
             } catch (ExecutionException wrapped) {
                 Throwable x = wrapped.getCause();
