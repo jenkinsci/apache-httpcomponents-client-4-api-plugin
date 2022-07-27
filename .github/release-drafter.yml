@@ -1,3 +1,1 @@
 _extends: .github
-# Currently the plugin uses the 5-digit versioning, so Release Drafter won't help with tag templates anyway
-tag-template: apache-httpcomponents-client-4-api-$NEXT_MINOR_VERSION
