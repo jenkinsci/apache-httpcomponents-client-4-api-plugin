@@ -10,15 +10,15 @@
   </parent>
 
   <artifactId>apache-httpcomponents-client-4-api</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${revision}-${changelist}</version>
   <packaging>hpi</packaging>
 
   <properties>
-    <revision>4.5.13-2.0</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>4.5.13</revision>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.319.1</jenkins.version>
     <httpcore.version>4.4.15</httpcore.version>
-    <httpclient.version>4.5.13</httpclient.version>
+    <httpclient.version>${revision}</httpclient.version>
     <httpasyncclient.version>4.1.4</httpasyncclient.version>
   </properties>
 
