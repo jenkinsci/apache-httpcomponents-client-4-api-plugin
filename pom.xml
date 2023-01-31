@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.43.1</version>
+    <version>4.54</version>
     <relativePath />
   </parent>
 
@@ -16,7 +16,7 @@
   <properties>
     <revision>4.5.13</revision>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.319.1</jenkins.version>
+    <jenkins.version>2.361.3</jenkins.version>
     <httpcore.version>4.4.15</httpcore.version>
     <httpclient.version>${revision}</httpclient.version>
     <httpasyncclient.version>4.1.4</httpasyncclient.version>
@@ -24,7 +24,7 @@
 
   <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
   <description>Bundles Apache HttpComponents Client 4.x and allows it to be used by Jenkins plugins</description>
-  <url>https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin</url>
+  <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
 
   <licenses>
     <license>
@@ -41,7 +41,7 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+    <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
     <tag>${scmTag}</tag>
@@ -50,8 +50,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.319.x</artifactId>
-        <version>1508.v4b_d09ff0e893</version>
+        <artifactId>bom-2.361.x</artifactId>
+        <version>1798.vc671fe94856f</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -130,7 +130,7 @@
           <dependency>
             <groupId>de.skuzzle.enforcer</groupId>
             <artifactId>restrict-imports-enforcer-rule</artifactId>
-            <version>0.7.0</version>
+            <version>2.1.0</version>
           </dependency>
         </dependencies>
         <executions>
@@ -142,15 +142,10 @@
             </goals>
             <configuration>
               <rules>
-                <restrictImports implementation="de.skuzzle.enforcer.restrictimports.RestrictImports">
-                  <basePackage>**</basePackage>
-                  <includeTestCode>true</includeTestCode>
-                  <bannedImports>
-                    <bannedImport>org.apache.commons.httpclient.**</bannedImport>
-                  </bannedImports>
-                </restrictImports>
+                <RestrictImports>
+                  <bannedImport>org.apache.commons.httpclient.**</bannedImport>
+                </RestrictImports>
               </rules>
-              <fail>true</fail>
             </configuration>
           </execution>
         </executions>
