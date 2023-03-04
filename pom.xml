@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.54</version>
+    <version>4.55</version>
     <relativePath />
   </parent>
 
@@ -19,7 +19,7 @@
     <jenkins.version>2.361.3</jenkins.version>
     <httpcore.version>4.4.15</httpcore.version>
     <httpclient.version>${revision}</httpclient.version>
-    <httpasyncclient.version>4.1.4</httpasyncclient.version>
+    <httpasyncclient.version>4.1.5</httpasyncclient.version>
   </properties>
 
   <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
