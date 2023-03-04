@@ -82,6 +82,5 @@ Releases before 2019 are described in the archived [Changelog](https://github.co
 
 ## License
 
-* Plugin codebase - [MIT License](http://opensource.org/licenses/MIT) 
+* Plugin source and documentation - [MIT License](http://opensource.org/licenses/MIT)
 * Nested library is licensed with [Apache License, Version 2.0](http://www.apache.org/licenses/)
-
