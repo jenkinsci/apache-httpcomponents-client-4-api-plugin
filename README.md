@@ -1,4 +1,4 @@
-# Apache HttpComponents Client 4.x API Plugin for Jenkins
+# Apache HTTP Components Client 4.x API Plugin
 
 This plugin bundles all the components of [Apache HttpComponents Client 4.5.x](https://hc.apache.org/httpcomponents-client-4.5.x/index.html) except `httpclient-win` because of the dependency on jna.
 These components can be used by other plugins as a dependency.
@@ -77,8 +77,8 @@ To avoid version conflicts it is suggested not to depend on a specific version, 
 
 ## Release Notes
 
-Current release notes are on [GitHub releases](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases).
-See the archived [Changelog](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/blob/apache-httpcomponents-client-4-api-4.5.5-2.0/CHANGELOG.md) for releases before 2019.
+See [GitHub releases](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases) for current release notes.
+Releases before 2019 are described in the archived [Changelog](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/blob/apache-httpcomponents-client-4-api-4.5.5-2.0/CHANGELOG.md).
 
 ## License
 
