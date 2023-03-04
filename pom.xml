@@ -104,6 +104,13 @@
       <artifactId>httpasyncclient-cache</artifactId>
       <version>${httpasyncclient.version}</version>
     </dependency>
+    <!-- spotbugs annotations needed to suppress javadoc warning -->
+    <!-- warning: unknown enum constant When.ALWAYS -->
+    <!-- reason: class file for javax.annotation.meta.When not found -->
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+    </dependency>
   </dependencies>
 
   <repositories>
