@@ -1,9 +1,4 @@
-Apache HttpComponents Client 4.x API Plugin for Jenkins
-===
-
-[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/apache-httpcomponents-client-4-api.svg)](https://plugins.jenkins.io/apache-httpcomponents-client-4-api)
-[![GitHub release](https://img.shields.io/github/release/jenkinsci/apache-httpcomponents-client-4-api-plugin.svg?label=changelog)](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases/latest)
-[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/apache-httpcomponents-client-4-api.svg?color=blue)](https://plugins.jenkins.io/apache-httpcomponents-client-4-api)
+# Apache HttpComponents Client 4.x API Plugin for Jenkins
 
 This plugin bundles all the components of [Apache HttpComponents Client 4.5.x](https://hc.apache.org/httpcomponents-client-4.5.x/index.html) except `httpclient-win` because of the dependency on jna.
 These components can be used by other plugins as a dependency.
@@ -14,6 +9,7 @@ It allows managing library updates independently from plugins.
 ### Plugins directly depending on httpclient
 
 Replace the dependency to `org.apache.httpcomponents:httpclient` with the dependency to `apache-httpcomponents-client-4-api`.
+To avoid version conflicts it is suggested not to depend on a specific version, but use the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme).
 
 * Before:
     ```
@@ -34,7 +30,6 @@ Replace the dependency to `org.apache.httpcomponents:httpclient` with the depend
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>apache-httpcomponents-client-4-api</artifactId>
-        <version>4.5.10-1.0</version>
       </dependency>
       ...
     </dependencies>
@@ -43,6 +38,7 @@ Replace the dependency to `org.apache.httpcomponents:httpclient` with the depend
 ### Plugins using libraries depending on httpclient
 
 Add the dependency to `apache-httpcomponents-client-4-api` BEFORE any of dependencies to those libraries to force maven to use `httpclient` declared by `apache-httpcomponents-client-4-api`.
+To avoid version conflicts it is suggested not to depend on a specific version, but use the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme).
 
 * Before:
     ```
@@ -66,7 +62,6 @@ Add the dependency to `apache-httpcomponents-client-4-api` BEFORE any of depende
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>apache-httpcomponents-client-4-api</artifactId>
-        <version>4.5.10-1.0</version>
       </dependency>
       <dependency>
         <artifactId>somelibrary-using-httpclient</artifactId>
@@ -82,7 +77,8 @@ Add the dependency to `apache-httpcomponents-client-4-api` BEFORE any of depende
 
 ## Release Notes
 
-See the [Changelog](CHANGELOG.md).
+Current release notes are on [GitHub releases](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/releases).
+See the archived [Changelog](https://github.com/jenkinsci/apache-httpcomponents-client-4-api-plugin/blob/apache-httpcomponents-client-4-api-4.5.5-2.0/CHANGELOG.md) for releases before 2019.
 
 ## License
 
