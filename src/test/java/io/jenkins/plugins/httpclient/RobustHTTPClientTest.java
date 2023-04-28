@@ -24,8 +24,9 @@
 
 package io.jenkins.plugins.httpclient;
 
-import java.net.URL;
 import static org.junit.Assert.*;
+
+import java.net.URL;
 import org.junit.Test;
 
 public class RobustHTTPClientTest {
@@ -33,8 +34,9 @@ public class RobustHTTPClientTest {
     @Test
     public void sanitize() throws Exception {
         assertEquals("http://x.com/some/path", RobustHTTPClient.sanitize(new URL("http://x.com/some/path")));
-        assertEquals("https://x.com/some/path?…", RobustHTTPClient.sanitize(new URL("https://x.com/some/path?auth=s3cr3t")));
-        assertEquals("https://…@x.com/otherpath", RobustHTTPClient.sanitize(new URL("https://user:s3cr3t@x.com/otherpath")));
+        assertEquals(
+                "https://x.com/some/path?…", RobustHTTPClient.sanitize(new URL("https://x.com/some/path?auth=s3cr3t")));
+        assertEquals(
+                "https://…@x.com/otherpath", RobustHTTPClient.sanitize(new URL("https://user:s3cr3t@x.com/otherpath")));
     }
-
 }

@@ -12,19 +12,9 @@
   <artifactId>apache-httpcomponents-client-4-api</artifactId>
   <version>${revision}-${changelist}</version>
   <packaging>hpi</packaging>
-
-  <properties>
-    <revision>4.5.14</revision>
-    <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.361.4</jenkins.version>
-    <httpcore.version>4.4.16</httpcore.version>
-    <httpclient.version>${revision}</httpclient.version>
-    <httpasyncclient.version>4.1.5</httpasyncclient.version>
-  </properties>
-
   <name>Jenkins Apache HttpComponents Client 4.x API Plugin</name>
   <description>Bundles Apache HttpComponents Client 4.x and allows it to be used by Jenkins plugins</description>
-  <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+  <url>https://github.com/${gitHubRepo}</url>
 
   <licenses>
     <license>
@@ -38,36 +28,56 @@
       <id>markewaite</id>
       <name>Mark Waite</name>
       <email>mark.earl.waite@gmail.com</email>
+      <roles>
+        <role>developer</role>
+      </roles>
     </developer>
   </developers>
 
-  <scm>
-    <connection>scm:git:https://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
-    <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+  <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
+    <connection>scm:git:https://github.com/${gitHubRepo}</connection>
+    <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
     <tag>${scmTag}</tag>
+    <url>https://github.com/${gitHubRepo}</url>
   </scm>
+
+  <properties>
+    <revision>4.5.14</revision>
+    <changelist>999999-SNAPSHOT</changelist>
+    <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
+    <jenkins.version>2.361.4</jenkins.version>
+    <httpcore.version>4.4.16</httpcore.version>
+    <httpclient.version>${revision}</httpclient.version>
+    <httpasyncclient.version>4.1.5</httpasyncclient.version>
+    <spotless.check.skip>false</spotless.check.skip>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.361.x</artifactId>
         <version>2025.v816d28f1e04f</version>
-        <scope>import</scope>
         <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <version>${httpcore.version}</version>
+      <artifactId>fluent-hc</artifactId>
+      <version>${httpclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore-nio</artifactId>
-      <version>${httpcore.version}</version>
+      <artifactId>httpasyncclient</artifactId>
+      <version>${httpasyncclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpasyncclient-cache</artifactId>
+      <version>${httpasyncclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -82,28 +92,23 @@
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpmime</artifactId>
-      <version>${httpclient.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>fluent-hc</artifactId>
-      <version>${httpclient.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient-cache</artifactId>
       <version>${httpclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpasyncclient</artifactId>
-      <version>${httpasyncclient.version}</version>
+      <artifactId>httpcore</artifactId>
+      <version>${httpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpasyncclient-cache</artifactId>
-      <version>${httpasyncclient.version}</version>
+      <artifactId>httpcore-nio</artifactId>
+      <version>${httpcore.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+      <version>${httpclient.version}</version>
     </dependency>
   </dependencies>
 
@@ -113,6 +118,7 @@
       <url>https://repo.jenkins-ci.org/public/</url>
     </repository>
   </repositories>
+
   <pluginRepositories>
     <pluginRepository>
       <id>repo.jenkins-ci.org</id>
@@ -137,10 +143,10 @@
         <executions>
           <execution>
             <id>ban-commons-httpclient-3x</id>
-            <phase>process-sources</phase>
             <goals>
               <goal>enforce</goal>
             </goals>
+            <phase>process-sources</phase>
             <configuration>
               <rules>
                 <RestrictImports>

@@ -24,6 +24,7 @@
 
 package io.jenkins.plugins.httpclient;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.model.Computer;
@@ -45,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jenkins.MasterToSlaveFileCallable;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.util.JenkinsJVM;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -66,7 +66,8 @@ public final class RobustHTTPClient implements Serializable {
 
     private static final long serialVersionUID = 1;
 
-    private static final ExecutorService executors = JenkinsJVM.isJenkinsJVM() ? Computer.threadPoolForRemoting : Executors.newCachedThreadPool();
+    private static final ExecutorService executors =
+            JenkinsJVM.isJenkinsJVM() ? Computer.threadPoolForRemoting : Executors.newCachedThreadPool();
 
     private int stopAfterAttemptNumber;
     // all times are measured in milliseconds
@@ -83,9 +84,11 @@ public final class RobustHTTPClient implements Serializable {
      */
     public RobustHTTPClient() {
         JenkinsJVM.checkJenkinsJVM();
-        this.stopAfterAttemptNumber = Integer.getInteger(RobustHTTPClient.class.getName() + ".STOP_AFTER_ATTEMPT_NUMBER", 10);
+        this.stopAfterAttemptNumber =
+                Integer.getInteger(RobustHTTPClient.class.getName() + ".STOP_AFTER_ATTEMPT_NUMBER", 10);
         this.waitMultiplier = Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MULTIPLIER", 100);
-        this.waitMaximum = Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MAXIMUM", TimeUnit.MINUTES.toMillis(5));
+        this.waitMaximum =
+                Long.getLong(RobustHTTPClient.class.getName() + ".WAIT_MAXIMUM", TimeUnit.MINUTES.toMillis(5));
         this.timeout = Long.getLong(RobustHTTPClient.class.getName() + ".TIMEOUT", TimeUnit.MINUTES.toMillis(15));
     }
 
@@ -154,39 +157,56 @@ public final class RobustHTTPClient implements Serializable {
      * @throws IOException if there is an unrecoverable error; {@link AbortException} will be used where appropriate
      * @throws InterruptedException if an operation, or a sleep between retries, is interrupted
      */
-    public void connect(String whatConcise, String whatVerbose, @NonNull ConnectionCreator connectionCreator, @NonNull
-            ConnectionUser connectionUser, @NonNull TaskListener listener) throws IOException, InterruptedException {
+    public void connect(
+            String whatConcise,
+            String whatVerbose,
+            @NonNull ConnectionCreator connectionCreator,
+            @NonNull ConnectionUser connectionUser,
+            @NonNull TaskListener listener)
+            throws IOException, InterruptedException {
         AtomicInteger responseCode = new AtomicInteger();
         int attempt = 1;
         while (true) {
             try {
                 try {
-                    executors.submit(() -> {
-                        responseCode.set(0);
-                        try (CloseableHttpClient client = HttpClients.createSystem()) {
-                            try (CloseableHttpResponse response = connectionCreator.connect(client)) {
-                                StatusLine statusLine = response.getStatusLine();
-                                responseCode.set(statusLine != null ? statusLine.getStatusCode() : 0);
-                                if (responseCode.get() < 200 || responseCode.get() >= 300) {
-                                    String diag;
-                                    HttpEntity entity = response.getEntity();
-                                    if (entity != null) {
-                                        try (InputStream err = entity.getContent()) {
-                                            Header contentEncoding = entity.getContentEncoding();
-                                            diag = IOUtils.toString(err, contentEncoding != null ? contentEncoding.getValue() : null);
+                    executors
+                            .submit(() -> {
+                                responseCode.set(0);
+                                try (CloseableHttpClient client = HttpClients.createSystem()) {
+                                    try (CloseableHttpResponse response = connectionCreator.connect(client)) {
+                                        StatusLine statusLine = response.getStatusLine();
+                                        responseCode.set(statusLine != null ? statusLine.getStatusCode() : 0);
+                                        if (responseCode.get() < 200 || responseCode.get() >= 300) {
+                                            String diag;
+                                            HttpEntity entity = response.getEntity();
+                                            if (entity != null) {
+                                                try (InputStream err = entity.getContent()) {
+                                                    Header contentEncoding = entity.getContentEncoding();
+                                                    diag = IOUtils.toString(
+                                                            err,
+                                                            contentEncoding != null
+                                                                    ? contentEncoding.getValue()
+                                                                    : null);
+                                                }
+                                            } else {
+                                                diag = null;
+                                            }
+                                            throw new AbortException(String.format(
+                                                    "Failed to %s, response: %d %s, body: %s",
+                                                    whatVerbose,
+                                                    responseCode.get(),
+                                                    statusLine != null ? statusLine.getReasonPhrase() : "?",
+                                                    diag));
                                         }
-                                    } else {
-                                        diag = null;
+                                        connectionUser.use(response);
                                     }
-                                    throw new AbortException(String.format("Failed to %s, response: %d %s, body: %s", whatVerbose, responseCode.get(), statusLine != null ? statusLine.getReasonPhrase() : "?", diag));
                                 }
-                                connectionUser.use(response);
-                            }
-                        }
-                        return null; // success
-                    }).get(timeout, TimeUnit.MILLISECONDS);
+                                return null; // success
+                            })
+                            .get(timeout, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException x) {
-                    throw new ExecutionException(new IOException(x)); // ExecutionException unwrapped & treated as retryable below
+                    throw new ExecutionException(
+                            new IOException(x)); // ExecutionException unwrapped & treated as retryable below
                 }
                 listener.getLogger().flush(); // seems we can get interleaved output with controller otherwise
                 return; // success
@@ -196,12 +216,16 @@ public final class RobustHTTPClient implements Serializable {
                     if (attempt == stopAfterAttemptNumber) {
                         throw (IOException) x; // last chance
                     }
-                    if (responseCode.get() > 0 && responseCode.get() < 200 || responseCode.get() >= 300 && responseCode.get() < 500) {
+                    if (responseCode.get() > 0 && responseCode.get() < 200
+                            || responseCode.get() >= 300 && responseCode.get() < 500) {
                         throw (IOException) x; // 4xx errors should not be retried
                     }
                     // TODO exponent base could be made into a configurable parameter
                     Thread.sleep(Math.min(((long) Math.pow(2d, attempt)) * waitMultiplier, waitMaximum));
-                    listener.getLogger().printf("Retrying %s after: %s%n", whatConcise, x instanceof AbortException ? x.getMessage() : x.toString());
+                    listener.getLogger()
+                            .printf(
+                                    "Retrying %s after: %s%n",
+                                    whatConcise, x instanceof AbortException ? x.getMessage() : x.toString());
                     attempt++; // and continue
                 } else if (x instanceof InterruptedException) { // all other exceptions considered fatal
                     throw (InterruptedException) x;
@@ -225,7 +249,15 @@ public final class RobustHTTPClient implements Serializable {
     public static String sanitize(URL url) {
         try {
             URI orig = url.toURI();
-            return new URI(orig.getScheme(), orig.getUserInfo() != null ? "…" : null, orig.getHost(), orig.getPort(), orig.getPath(), orig.getQuery() != null ? "…" : null, orig.getFragment()).toString();
+            return new URI(
+                            orig.getScheme(),
+                            orig.getUserInfo() != null ? "…" : null,
+                            orig.getHost(),
+                            orig.getPort(),
+                            orig.getPath(),
+                            orig.getQuery() != null ? "…" : null,
+                            orig.getFragment())
+                    .toString();
         } catch (URISyntaxException x) {
             assert false : x;
             return url.toString();
@@ -245,26 +277,37 @@ public final class RobustHTTPClient implements Serializable {
      * @param f the file to upload
      * @param contentType the content type for the specified file
      */
-    public void uploadFile(File f, String contentType, URL url, TaskListener listener) throws IOException, InterruptedException {
-        connect("upload", "upload " + f + " to " + sanitize(url), client -> {
-            HttpPut put = new HttpPut(url.toString());
-            put.setEntity(new FileEntity(f));
-            if (contentType != null) {
-                put.setHeader("Content-Type", contentType);
-            }
-            return client.execute(put);
-        }, response -> {}, listener);
+    public void uploadFile(File f, String contentType, URL url, TaskListener listener)
+            throws IOException, InterruptedException {
+        connect(
+                "upload",
+                "upload " + f + " to " + sanitize(url),
+                client -> {
+                    HttpPut put = new HttpPut(url.toString());
+                    put.setEntity(new FileEntity(f));
+                    if (contentType != null) {
+                        put.setHeader("Content-Type", contentType);
+                    }
+                    return client.execute(put);
+                },
+                response -> {},
+                listener);
     }
 
     /**
      * Download a file from a URL.
      */
     public void downloadFile(File f, URL url, TaskListener listener) throws IOException, InterruptedException {
-        connect("download", "download " + sanitize(url) + " to " + f, client -> client.execute(new HttpGet(url.toString())), response -> {
-            try (InputStream is = response.getEntity().getContent()) {
-                FileUtils.copyInputStreamToFile(is, f);
-            }
-        }, listener);
+        connect(
+                "download",
+                "download " + sanitize(url) + " to " + f,
+                client -> client.execute(new HttpGet(url.toString())),
+                response -> {
+                    try (InputStream is = response.getEntity().getContent()) {
+                        FileUtils.copyInputStreamToFile(is, f);
+                    }
+                },
+                listener);
     }
 
     /**
@@ -279,11 +322,13 @@ public final class RobustHTTPClient implements Serializable {
         private final RobustHTTPClient client;
         private final URL u;
         private final TaskListener listener;
+
         CopyFromRemotely(RobustHTTPClient client, URL u, TaskListener listener) {
             this.client = client;
             this.u = u;
             this.listener = listener;
         }
+
         @Override
         public Void invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
             try {
@@ -294,5 +339,4 @@ public final class RobustHTTPClient implements Serializable {
             return null;
         }
     }
-
 }
