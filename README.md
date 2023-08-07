@@ -9,7 +9,7 @@ It allows managing library updates independently from plugins.
 ### Plugins directly depending on httpclient
 
 Replace the dependency to `org.apache.httpcomponents:httpclient` with the dependency to `apache-httpcomponents-client-4-api`.
-To avoid version conflicts it is suggested not to depend on a specific version, but use the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme).
+Avoid version conflicts by using the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme) rather than depending on a specific version.
 
 * Before:
     ```
@@ -38,7 +38,7 @@ To avoid version conflicts it is suggested not to depend on a specific version, 
 ### Plugins using libraries depending on httpclient
 
 Add the dependency to `apache-httpcomponents-client-4-api` BEFORE any of dependencies to those libraries to force maven to use `httpclient` declared by `apache-httpcomponents-client-4-api`.
-To avoid version conflicts it is suggested not to depend on a specific version, but use the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme).
+Avoid version conflicts by using the [Jenkins plugin BOM](https://github.com/jenkinsci/bom#readme) rather than depending on a specific version.
 
 * Before:
     ```
