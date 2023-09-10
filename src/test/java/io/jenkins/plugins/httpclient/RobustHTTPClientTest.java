@@ -93,4 +93,20 @@ public class RobustHTTPClientTest {
         });
         assertThat(e.getMessage(), containsString("Failed to download "));
     }
+
+    @Test
+    public void testDownloadFileStopAfterOneAttempt() throws Exception {
+        JenkinsRule.WebClient wc = j.createWebClient();
+        RobustHTTPClient client = wc.executeOnServer(() -> {
+            RobustHTTPClient internalClient = new RobustHTTPClient();
+            internalClient.setStopAfterAttemptNumber(1);
+            return internalClient;
+        });
+        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
+        URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
+        final hudson.AbortException e = assertThrows(hudson.AbortException.class, () -> {
+            client.downloadFile(f, badURL, TaskListener.NULL);
+        });
+        assertThat(e.getMessage(), containsString("Failed to download "));
+    }
 }
