@@ -26,6 +26,7 @@ package io.jenkins.plugins.httpclient;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThrows;
 
 import hudson.model.TaskListener;
 import java.io.File;
@@ -58,6 +59,14 @@ public class RobustHTTPClientTest {
         assertThat(
                 RobustHTTPClient.sanitize(new URL("https://user:s3cr3t@example.com/otherpath")),
                 is("https://…@example.com/otherpath"));
+    }
+
+    @Test
+    public void sanitizeThrowsException() {
+        final AssertionError e = assertThrows(AssertionError.class, () -> {
+            RobustHTTPClient.sanitize(new URL("https://example.com/ /has/space/in/url/"));
+        });
+        assertThat(e.getCause().getMessage(), containsString("Illegal character in path at index 20"));
     }
 
     @Test
