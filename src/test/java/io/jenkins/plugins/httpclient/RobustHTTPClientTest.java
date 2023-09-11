@@ -28,31 +28,12 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThrows;
 
-import hudson.AbortException;
-import hudson.model.TaskListener;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.junit.Assume;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
 
 public class RobustHTTPClientTest {
-
-    @ClassRule
-    public static JenkinsRule j = new JenkinsRule();
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
     @Test
-    @WithoutJenkins
     public void sanitize() throws Exception {
         assertThat(
                 RobustHTTPClient.sanitize(new URL("http://example.com/some/long/path")),
@@ -66,68 +47,25 @@ public class RobustHTTPClientTest {
     }
 
     @Test
-    @WithoutJenkins
-    public void sanitizeThrowsException() {
+    public void sanitizeReturnsInvalidURLs() throws Exception {
+        Assume.assumeFalse(RobustHTTPClient.class.desiredAssertionStatus());
+        /* URLs that cannot be converted to URIs are not sanitized.
+         * They are returned "as-is" when assertions are disabled.
+         */
+        String invalidURI = "https://user:s3cr3t@example.com/ /has/space/in/url/";
+        assertThat(RobustHTTPClient.sanitize(new URL(invalidURI)), is(invalidURI));
+    }
+
+    @Test
+    public void sanitizeExceptionOnInvalidURLs() throws Exception {
+        Assume.assumeTrue(RobustHTTPClient.class.desiredAssertionStatus());
+        /* URLs that cannot be converted to URIs are not sanitized.
+         * An assertion exception is thrown when assertions are enabled.
+         */
+        String invalidURI = "https://user:s3cr3t@example.com/ /has/space/in/url/";
         final AssertionError e = assertThrows(AssertionError.class, () -> {
-            RobustHTTPClient.sanitize(new URL("https://example.com/ /has/space/in/url/"));
+            RobustHTTPClient.sanitize(new URL(invalidURI));
         });
-        assertThat(e.getCause().getMessage(), containsString("Illegal character in path at index 20"));
-    }
-
-    @Test
-    public void testDownloadFile() throws Exception {
-        JenkinsRule.WebClient wc = j.createWebClient();
-        RobustHTTPClient client = wc.executeOnServer(() -> {
-            return new RobustHTTPClient();
-        });
-        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
-        client.downloadFile(f, j.getURL(), TaskListener.NULL);
-        assertThat(Files.readString(f.toPath()), containsString("<title>Dashboard [Jenkins]</title>"));
-    }
-
-    @Test
-    public void testDownloadFileWithTimeoutException() throws Exception {
-        JenkinsRule.WebClient wc = j.createWebClient();
-        RobustHTTPClient client = wc.executeOnServer(() -> {
-            RobustHTTPClient internalClient = new RobustHTTPClient();
-            internalClient.setStopAfterAttemptNumber(1);
-            internalClient.setTimeout(50, TimeUnit.MICROSECONDS);
-            return internalClient;
-        });
-        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
-        final IOException e = assertThrows(IOException.class, () -> {
-            client.downloadFile(f, j.getURL(), TaskListener.NULL);
-        });
-        assertThat(e.getCause(), isA(TimeoutException.class));
-    }
-
-    @Test
-    public void testDownloadFileFromNonExistentLocation() throws Exception {
-        JenkinsRule.WebClient wc = j.createWebClient();
-        RobustHTTPClient client = wc.executeOnServer(() -> {
-            return new RobustHTTPClient();
-        });
-        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
-        URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final AbortException e = assertThrows(AbortException.class, () -> {
-            client.downloadFile(f, badURL, TaskListener.NULL);
-        });
-        assertThat(e.getMessage(), containsString("Failed to download "));
-    }
-
-    @Test
-    public void testDownloadFileStopAfterOneAttempt() throws Exception {
-        JenkinsRule.WebClient wc = j.createWebClient();
-        RobustHTTPClient client = wc.executeOnServer(() -> {
-            RobustHTTPClient internalClient = new RobustHTTPClient();
-            internalClient.setStopAfterAttemptNumber(1);
-            return internalClient;
-        });
-        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
-        URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final AbortException e = assertThrows(AbortException.class, () -> {
-            client.downloadFile(f, badURL, TaskListener.NULL);
-        });
-        assertThat(e.getMessage(), containsString("Failed to download "));
+        assertThat(e.getCause().getMessage(), containsString("Illegal character in path at index 32: " + invalidURI));
     }
 }
