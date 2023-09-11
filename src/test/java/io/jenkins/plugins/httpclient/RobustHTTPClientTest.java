@@ -66,6 +66,7 @@ public class RobustHTTPClientTest {
     }
 
     @Test
+    @WithoutJenkins
     public void sanitizeThrowsException() {
         final AssertionError e = assertThrows(AssertionError.class, () -> {
             RobustHTTPClient.sanitize(new URL("https://example.com/ /has/space/in/url/"));
