@@ -28,10 +28,14 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThrows;
 
+import hudson.AbortException;
 import hudson.model.TaskListener;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -81,6 +85,22 @@ public class RobustHTTPClientTest {
     }
 
     @Test
+    public void testDownloadFileWithTimeoutException() throws Exception {
+        JenkinsRule.WebClient wc = j.createWebClient();
+        RobustHTTPClient client = wc.executeOnServer(() -> {
+            RobustHTTPClient internalClient = new RobustHTTPClient();
+            internalClient.setStopAfterAttemptNumber(1);
+            internalClient.setTimeout(50, TimeUnit.MICROSECONDS);
+            return internalClient;
+        });
+        File f = new File(tempFolder.newFolder(), "jenkins-index.html");
+        final IOException e = assertThrows(IOException.class, () -> {
+            client.downloadFile(f, j.getURL(), TaskListener.NULL);
+        });
+        assertThat(e.getCause(), isA(TimeoutException.class));
+    }
+
+    @Test
     public void testDownloadFileFromNonExistentLocation() throws Exception {
         JenkinsRule.WebClient wc = j.createWebClient();
         RobustHTTPClient client = wc.executeOnServer(() -> {
@@ -88,7 +108,7 @@ public class RobustHTTPClientTest {
         });
         File f = new File(tempFolder.newFolder(), "jenkins-index.html");
         URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final hudson.AbortException e = assertThrows(hudson.AbortException.class, () -> {
+        final AbortException e = assertThrows(AbortException.class, () -> {
             client.downloadFile(f, badURL, TaskListener.NULL);
         });
         assertThat(e.getMessage(), containsString("Failed to download "));
@@ -104,7 +124,7 @@ public class RobustHTTPClientTest {
         });
         File f = new File(tempFolder.newFolder(), "jenkins-index.html");
         URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final hudson.AbortException e = assertThrows(hudson.AbortException.class, () -> {
+        final AbortException e = assertThrows(AbortException.class, () -> {
             client.downloadFile(f, badURL, TaskListener.NULL);
         });
         assertThat(e.getMessage(), containsString("Failed to download "));
