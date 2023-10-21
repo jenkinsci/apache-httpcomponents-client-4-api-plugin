@@ -23,8 +23,9 @@
  */
 package io.jenkins.plugins.httpclient;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertThrows;
 
 import hudson.AbortException;
