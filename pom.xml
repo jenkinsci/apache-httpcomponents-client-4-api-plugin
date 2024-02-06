@@ -50,8 +50,6 @@
     <httpclient.version>${revision}</httpclient.version>
     <httpasyncclient.version>4.1.5</httpasyncclient.version>
     <spotbugs.effort>Max</spotbugs.effort>
-    <!-- TODO: Remove when parent pom has newer spotbugs -->
-    <spotbugs-maven-plugin.version>4.8.2.0</spotbugs-maven-plugin.version>
     <spotbugs.threshold>Low</spotbugs.threshold>
     <spotless.check.skip>false</spotless.check.skip>
   </properties>
