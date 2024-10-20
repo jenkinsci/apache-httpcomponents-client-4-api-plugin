@@ -33,6 +33,7 @@ import hudson.remoting.VirtualChannel;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,6 +65,7 @@ import org.apache.http.impl.client.HttpClients;
  */
 public final class RobustHTTPClient implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1;
 
     private static final ExecutorService executors =
@@ -191,12 +193,12 @@ public final class RobustHTTPClient implements Serializable {
                                             } else {
                                                 diag = null;
                                             }
-                                            throw new AbortException(String.format(
-                                                    "Failed to %s, response: %d %s, body: %s",
-                                                    whatVerbose,
-                                                    responseCode.get(),
-                                                    statusLine != null ? statusLine.getReasonPhrase() : "?",
-                                                    diag));
+                                            throw new AbortException("Failed to %s, response: %d %s, body: %s"
+                                                    .formatted(
+                                                            whatVerbose,
+                                                            responseCode.get(),
+                                                            statusLine != null ? statusLine.getReasonPhrase() : "?",
+                                                            diag));
                                         }
                                         connectionUser.use(response);
                                     }
@@ -212,13 +214,13 @@ public final class RobustHTTPClient implements Serializable {
                 return; // success
             } catch (ExecutionException wrapped) {
                 Throwable x = wrapped.getCause();
-                if (x instanceof IOException) {
+                if (x instanceof IOException exception) {
                     if (attempt == stopAfterAttemptNumber) {
-                        throw (IOException) x; // last chance
+                        throw exception; // last chance
                     }
                     if (responseCode.get() > 0 && responseCode.get() < 200
                             || responseCode.get() >= 300 && responseCode.get() < 500) {
-                        throw (IOException) x; // 4xx errors should not be retried
+                        throw exception; // 4xx errors should not be retried
                     }
                     // TODO exponent base could be made into a configurable parameter
                     Thread.sleep(Math.min(((long) Math.pow(2d, attempt)) * waitMultiplier, waitMaximum));
@@ -227,10 +229,10 @@ public final class RobustHTTPClient implements Serializable {
                                     "Retrying %s after: %s%n",
                                     whatConcise, x instanceof AbortException ? x.getMessage() : x.toString());
                     attempt++; // and continue
-                } else if (x instanceof InterruptedException) { // all other exceptions considered fatal
-                    throw (InterruptedException) x;
-                } else if (x instanceof RuntimeException) {
-                    throw (RuntimeException) x;
+                } else if (x instanceof InterruptedException exception) { // all other exceptions considered fatal
+                    throw exception;
+                } else if (x instanceof RuntimeException exception) {
+                    throw exception;
                 } else if (x != null) {
                     throw new RuntimeException(x);
                 } else {
@@ -318,7 +320,9 @@ public final class RobustHTTPClient implements Serializable {
     }
 
     private static final class CopyFromRemotely extends MasterToSlaveFileCallable<Void> {
+        @Serial
         private static final long serialVersionUID = 1;
+
         private final RobustHTTPClient client;
         private final URL u;
         private final TaskListener listener;
