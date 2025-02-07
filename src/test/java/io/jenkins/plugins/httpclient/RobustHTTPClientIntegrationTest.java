@@ -67,7 +67,8 @@ public class RobustHTTPClientIntegrationTest {
     @Test
     public void testDownloadFile() throws Exception {
         client.downloadFile(f, j.getURL(), TaskListener.NULL);
-        assertThat(Files.readString(f.toPath()), containsString("<title>Dashboard [Jenkins]</title>"));
+        // Jenkins controller root page should always contain at lease one reference to Jenkins web site
+        assertThat(Files.readString(f.toPath()), containsString("https://www.jenkins.io/"));
     }
 
     /**
