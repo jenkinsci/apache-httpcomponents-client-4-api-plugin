@@ -26,69 +26,72 @@ package io.jenkins.plugins.httpclient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import hudson.AbortException;
 import hudson.model.TaskListener;
 import hudson.model.UnprotectedRootAction;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 
-public class RobustHTTPClientIntegrationTest {
-
-    @ClassRule
-    public static JenkinsRule j = new JenkinsRule();
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
-    private RobustHTTPClient client;
-    private File f;
-
-    @Before
-    public void createRobustHTTPClient() throws Exception {
-        client = new RobustHTTPClient();
-        f = new File(tempFolder.newFolder(), "jenkins-index.html");
-    }
-
-    @Test
-    public void testDownloadFile() throws Exception {
-        client.downloadFile(f, j.getURL(), TaskListener.NULL);
-        // Jenkins controller root page should always contain at lease one reference to Jenkins web site
-        assertThat(Files.readString(f.toPath()), containsString("https://www.jenkins.io/"));
-    }
-
+@WithJenkins
+class RobustHTTPClientIntegrationTest {
     /**
      * Wait no more than TIMEOUT seconds for response
      */
     private static final int TIMEOUT = 2;
 
+    private static JenkinsRule j;
+
+    @TempDir
+    private Path tempFolder;
+
+    private RobustHTTPClient client;
+    private Path file;
+
+    @BeforeAll
+    static void setUp(JenkinsRule rule) {
+        j = rule;
+    }
+
+    @BeforeEach
+    void setUp() throws Exception {
+        client = new RobustHTTPClient();
+        file = Files.createTempDirectory(tempFolder, "junit").resolve("jenkins-index.html");
+    }
+
     @Test
-    public void testDownloadFileWithTimeoutException() throws Exception {
+    void testDownloadFile() throws Exception {
+        client.downloadFile(file.toFile(), j.getURL(), TaskListener.NULL);
+        // Jenkins controller root page should always contain at lease one reference to Jenkins website
+        assertThat(Files.readString(file), containsString("https://www.jenkins.io/"));
+    }
+
+    @Test
+    void testDownloadFileWithTimeoutException() throws Exception {
         client.setStopAfterAttemptNumber(1);
         client.setTimeout(TIMEOUT, TimeUnit.SECONDS);
         URL hangingURL = new URL(j.getURL().toString() + "intentionally-hangs-always");
-        final IOException e = assertThrows(IOException.class, () -> {
-            client.downloadFile(f, hangingURL, TaskListener.NULL);
-        });
+        final IOException e = assertThrows(
+                IOException.class, () -> client.downloadFile(file.toFile(), hangingURL, TaskListener.NULL));
         assertThat(e.getCause(), isA(TimeoutException.class));
     }
 
     @Test
-    public void testDownloadFileWithRetry() throws Exception {
+    void testDownloadFileWithRetry() throws Exception {
         // Try up to three times, should succeed on second try
         client.setStopAfterAttemptNumber(3);
         // Wait 213 milliseconds before retry (no need for a long wait)
@@ -98,30 +101,29 @@ public class RobustHTTPClientIntegrationTest {
         // Retry if no response in TIMEOUT seconds
         client.setTimeout(TIMEOUT, TimeUnit.SECONDS);
         URL hangsOnceURL = new URL(j.getURL().toString() + "intentionally-hangs-once");
-        client.downloadFile(f, hangsOnceURL, TaskListener.NULL);
-        assertThat(Files.readString(f.toPath()), containsString("a-dubious-response-from-hangs-once"));
+        client.downloadFile(file.toFile(), hangsOnceURL, TaskListener.NULL);
+        assertThat(Files.readString(file), containsString("a-dubious-response-from-hangs-once"));
     }
 
     @Test
-    public void testDownloadFileFromNonExistentLocation() throws Exception {
+    void testDownloadFileFromNonExistentLocation() throws Exception {
         URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final AbortException e = assertThrows(AbortException.class, () -> {
-            client.downloadFile(f, badURL, TaskListener.NULL);
-        });
+        final AbortException e =
+                assertThrows(AbortException.class, () -> client.downloadFile(file.toFile(), badURL, TaskListener.NULL));
         assertThat(e.getMessage(), containsString("Failed to download "));
     }
 
     @Test
-    public void testDownloadFileStopAfterOneAttempt() throws Exception {
+    void testDownloadFileStopAfterOneAttempt() throws Exception {
         client.setStopAfterAttemptNumber(1);
         URL badURL = new URL(j.getURL().toString() + "/page/does/not/exist");
-        final AbortException e = assertThrows(AbortException.class, () -> {
-            client.downloadFile(f, badURL, TaskListener.NULL);
-        });
+        final AbortException e =
+                assertThrows(AbortException.class, () -> client.downloadFile(file.toFile(), badURL, TaskListener.NULL));
         assertThat(e.getMessage(), containsString("Failed to download "));
     }
 
     @TestExtension
+    @SuppressWarnings("unused")
     public static class IntentionallyHangsAlwaysAction implements UnprotectedRootAction {
 
         @Override
@@ -151,6 +153,7 @@ public class RobustHTTPClientIntegrationTest {
     }
 
     @TestExtension
+    @SuppressWarnings("unused")
     public static class IntentionallyHangsOnceAction implements UnprotectedRootAction {
 
         private int requestCount = 0;
