@@ -27,15 +27,17 @@ package io.jenkins.plugins.httpclient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.net.URL;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class RobustHTTPClientTest {
+class RobustHTTPClientTest {
+
     @Test
-    public void sanitize() throws Exception {
+    void sanitize() throws Exception {
         assertThat(
                 RobustHTTPClient.sanitize(new URL("http://example.com/some/long/path")),
                 is("http://example.com/some/long/path"));
@@ -48,8 +50,8 @@ public class RobustHTTPClientTest {
     }
 
     @Test
-    public void sanitizeReturnsInvalidURLs() throws Exception {
-        Assume.assumeFalse(RobustHTTPClient.class.desiredAssertionStatus());
+    void sanitizeReturnsInvalidURLs() throws Exception {
+        assumeFalse(RobustHTTPClient.class.desiredAssertionStatus());
         /* URLs that cannot be converted to URIs are not sanitized.
          * They are returned "as-is" when assertions are disabled.
          */
@@ -58,15 +60,14 @@ public class RobustHTTPClientTest {
     }
 
     @Test
-    public void sanitizeExceptionOnInvalidURLs() throws Exception {
-        Assume.assumeTrue(RobustHTTPClient.class.desiredAssertionStatus());
+    void sanitizeExceptionOnInvalidURLs() {
+        assumeTrue(RobustHTTPClient.class.desiredAssertionStatus());
         /* URLs that cannot be converted to URIs are not sanitized.
          * An assertion exception is thrown when assertions are enabled.
          */
         String invalidURI = "https://user:s3cr3t@example.com/ /has/space/in/url/";
-        final AssertionError e = assertThrows(AssertionError.class, () -> {
-            RobustHTTPClient.sanitize(new URL(invalidURI));
-        });
+        final AssertionError e =
+                assertThrows(AssertionError.class, () -> RobustHTTPClient.sanitize(new URL(invalidURI)));
         assertThat(e.getCause().getMessage(), containsString("Illegal character in path at index 32: " + invalidURI));
     }
 }
