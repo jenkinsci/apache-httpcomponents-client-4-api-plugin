@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>5.19</version>
+    <version>5.22</version>
     <relativePath />
   </parent>
 
@@ -38,6 +38,8 @@
     <jenkins.baseline>2.492</jenkins.baseline>
     <jenkins.version>${jenkins.baseline}.1</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
+    <hpi.bundledArtifacts>fluent-hc,httpasyncclient,httpasyncclient-cache,httpclient,httpclient-cache,httpcore,httpcore-nio,httpmime</hpi.bundledArtifacts>
+    <hpi.strictBundledArtifacts>true</hpi.strictBundledArtifacts>
 
     <httpcore.version>4.4.16</httpcore.version>
     <httpclient.version>${revision}</httpclient.version>
