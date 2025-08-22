@@ -18,7 +18,7 @@ Avoid version conflicts by using the [Jenkins plugin BOM](https://github.com/jen
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>4.5</version>
+        <version>4.5.14</version>
       </dependency>
       ...
     </dependencies>
